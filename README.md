@@ -68,8 +68,16 @@ If you have many books/sections:
 ```bash
 export SANSPWD='your-password'
 for f in *.pdf; do
-    qpdf --password="$SANSPWD" --decrypt "$$   f" "   $${f%.*}_nopass.pdf"
+    [ -f "$f" ] || continue  # skip if no PDFs
+    OUTPUT="${f%.*}_nopass.pdf"
+    qpdf --password="$SANSPWD" --decrypt "$f" "$OUTPUT"
+    if [ $? -eq 0 ]; then
+        echo "Decrypted: $OUTPUT"
+    else
+        echo "Failed: $f"
+    fi
 done
+unset SANSPWD
 ```
 
 
