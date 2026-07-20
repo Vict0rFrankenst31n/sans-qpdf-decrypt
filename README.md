@@ -1,88 +1,103 @@
 # SANS Workbook Password Removal (using qpdf)
 
-Tired of typing the same password every time you open a SANS electronic workbook (SEC560, FOR578, etc.)?
+Tired of typing the same password every time you open a SANS electronic workbook
+(SEC560, FOR578, etc.)? This repo gives you a small script — and a one-liner —
+that use [`qpdf`](https://github.com/qpdf/qpdf) to decrypt a PDF **once** with
+your known password, producing an unprotected copy you can open without prompts.
 
-This repo contains a dead-simple one-liner + optional bash script to decrypt the PDF **once** using your known password — creating an unprotected version you can use without prompts.
+## ⚠️ Legal note — read this first
 
-## Important legal note   
-Only use this on SANS materials you have legitimately purchased / received access to. Do **NOT** share decrypted PDFs. Violation of the Courseware License Agreement could result in financial liability and decertification.
+Only use this on materials you have **legitimately purchased or been granted
+access to**, and do **not** share the decrypted PDFs. Violating the SANS
+Courseware License Agreement can result in financial liability and
+decertification. This tool does not break or bypass unknown passwords — you must
+already know the password.
+
+## Contents
+
+- [Requirements](#requirements)
+- [Quick start (recommended)](#quick-start-recommended)
+- [One-liner (no script)](#one-liner-no-script)
+- [Verify it worked](#verify-it-worked)
+- [How it works](#how-it-works)
+- [License](#license)
 
 ## Requirements
-- Ubuntu, Debian, Kali, WSL, macOS, or any Linux/macOS system
-- `qpdf` installed
+
+- Linux, macOS, or Windows via WSL (Ubuntu, Debian, Kali, etc.)
+- `qpdf` installed:
 
 ```bash
-# Ubuntu / Debian / WSL / Kali
+# Debian / Ubuntu / Kali / WSL
 sudo apt update && sudo apt install qpdf -y
 
-# macOS (with Homebrew)
+# macOS (Homebrew)
 brew install qpdf
 ```
-## One-liner method (what most people use)
+
+## Quick start (recommended)
+
+The [`decrypt-sans.sh`](decrypt-sans.sh) script handles a single file or a whole
+folder, prompts for your password without showing it, and won't overwrite your
+originals.
+
 ```bash
-export SANSPWD='your-actual-sans-password-here'
-qpdf --password="$SANSPWD" --decrypt ./SEC560_GPEN_Book1.pdf ./SEC560_GPEN_Book1_NoPass.pdf
+# 1. Download the script
+wget https://raw.githubusercontent.com/Vict0rFrankenst31n/sans-qpdf-decrypt/main/decrypt-sans.sh
+
+# 2. Make it executable
+chmod +x decrypt-sans.sh
+
+# 3a. Decrypt one file
+./decrypt-sans.sh SEC560_Book1.pdf
+
+# 3b. …or every PDF in the current folder
+./decrypt-sans.sh
 ```
-Replace filenames as needed. After this runs successfully:
 
-The new file (*_NoPass.pdf) opens without any password prompt.
-You can delete or archive the original encrypted version.
-## Optional: Simple bash script (decrypt-sansk.sh)
-Create a file called decrypt-sansk.sh:
-```bash
-#!/usr/bin/env bash
+Each `Book1.pdf` becomes `Book1_NoPass.pdf` next to it. You'll be prompted for the
+password (input stays hidden). Run `./decrypt-sans.sh --help` for all options.
 
-# Usage: ./decrypt-sansk.sh Book1.pdf
-#        or drag-and-drop the PDF onto the script
+**Tip:** To skip the prompt for a batch run, export the password first:
 
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 input.pdf"
-    exit 1
-fi
-
-INPUT="$1"
-OUTPUT="${INPUT%.*}_NoPass.pdf"
-
-echo "Enter your SANS workbook password:"
-read -s SANSPWD
-
-qpdf --password="$SANSPWD" --decrypt "$INPUT" "$OUTPUT"
-
-if [ $? -eq 0 ]; then
-    echo "Success! Created: $OUTPUT"
-    echo "You can now open it without password prompts."
-else
-    echo "Failed. Check password or if qpdf is installed."
-fi
-```
-Make it executable:
-```bash
-chmod +x decrypt-sansk.sh
-```
-Then run:
-```bash
-./decrypt-sansk.sh SEC560_GPEN_Book1.pdf
-```
-## Bulk decrypt (all PDFs in current folder)
-If you have many books/sections:
 ```bash
 export SANSPWD='your-password'
-for f in *.pdf; do
-    [ -f "$f" ] || continue  # skip if no PDFs
-    OUTPUT="${f%.*}_nopass.pdf"
-    qpdf --password="$SANSPWD" --decrypt "$f" "$OUTPUT"
-    if [ $? -eq 0 ]; then
-        echo "Decrypted: $OUTPUT"
-    else
-        echo "Failed: $f"
-    fi
-done
+./decrypt-sans.sh
 unset SANSPWD
 ```
 
+## One-liner (no script)
 
+If you just want the raw command for a single file:
 
+```bash
+qpdf --password='your-password' --decrypt SEC560_Book1.pdf SEC560_Book1_NoPass.pdf
+```
 
+The new `*_NoPass.pdf` opens without a prompt. You can then archive or delete the
+original encrypted copy.
 
+> Note: putting the password directly in the command saves it to your shell
+> history. The script above avoids that by prompting instead — prefer it if you
+> care about that.
 
+## Verify it worked
 
+Open the new file — it should not ask for a password. Or confirm from the
+terminal that encryption is gone:
+
+```bash
+qpdf --show-encryption SEC560_Book1_NoPass.pdf
+# -> "File is not encrypted"
+```
+
+## How it works
+
+`qpdf --decrypt` takes a PDF you can already open (because you supply the correct
+password) and writes an equivalent PDF with the encryption removed. It does
+**not** crack or guess passwords; it simply removes protection you are already
+authorized to bypass. Nothing is uploaded anywhere — everything runs locally.
+
+## License
+
+Released under the [MIT License](LICENSE).
